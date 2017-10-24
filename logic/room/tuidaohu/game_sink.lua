@@ -18,7 +18,7 @@ function game_sink:ctor(interface, table_config)
 	self.is_playing = false
 	self.players = {}
 	self:init_game()
-	majiang_opration:set_config(self.game_all_info, self.game_config, self.louHuChair )
+	majiang_opration:set_config(self.game_all_info, self.game_config, self.louHuChair, self.table_config.player_count)
 	self.game_record = game_record_ctor.new(self.table_config)
 end
 
@@ -487,7 +487,6 @@ function game_sink:draw_card(chair_id, last)
         isfirstDraw = true
     end
 	local ret = majiang_opration:mo_card(user_card_info.handCards, user_card_info.stackCards, user_card_info.pengCards, card, last, chair_id, self.louHuChair, isfirstDraw)
-	syslog.debug("draw_card===============")
 	table.printT(ret)	
 	self:send_table_client(0,"game_post_timeout_chair", {chair_id = chair_id})
 	majiang_opration:handle_mo_card(user_card_info.handCards, user_card_info.stackCards, card)
@@ -960,7 +959,7 @@ function game_sink:hu_card(chair_id, card)
 			end
 		    if not next(self.game_end_balance_info.birdCard) then
 		    	--中马
-			    local ret = majiang_opration:handle_find_bird(self.aftercards)
+			    local ret = majiang_opration:handle_find_bird(self.banker,chair_id,self.aftercards)
 
 			    self.game_end_balance_info.birdCard = ret.birds
 			    self.game_end_balance_info.birdNum = ret.bird_num

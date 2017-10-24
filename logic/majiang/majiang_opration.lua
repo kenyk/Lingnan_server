@@ -321,14 +321,73 @@ function majiang_operation:check_is_bird(card)
 		return true
 	elseif math.ceil(card / 10) <= 4 then
 		local tail_num = card % 10 
-		if self.bird_table[tail_num] then
+		if self.four_bird_table_1[tail_num] then
 			return true
 		end
 	end
 	return false
 end
 
-function majiang_operation:handle_find_bird(leftcard)
+function majiang_operation:check_is_bird_follow_banker(banker,chair_id,card)
+	if self.table_config.laizi and card == 45 then 
+		return true
+	end
+	local pos = banker - chair_id
+	if math.ceil(card / 10) <= 5 then
+		local tail_num
+		if card < 48 then
+			tail_num = card % 10
+		end 
+		if self.player_count == 2 then
+			if pos == -1 or pos == 1 then --对家
+				if self.two_bird_table_2[tail_num] then
+					return true
+				end
+			else --庄家159
+				if self.two_bird_table_1[tail_num] then 
+					return true
+				end
+			end
+		elseif self.player_count == 3 then
+			if pos == -1 or pos == 2 then --下家
+				if self.three_bird_table_2[tail_num] then
+					return true
+				end
+			elseif pos == -2 or pos == 1 then --上家
+				if self.three_bird_table_3[tail_num] then
+					return true
+				end
+			else
+				if self.three_bird_table_1[tail_num] then
+					return true
+				end
+			end
+		else
+			if pos == -1 or pos == 3 then --下家
+				if self.four_bird_table_2[tail_num] then
+					return true
+				end
+			elseif pos == -2 or pos == 2 then --对家
+				if self.four_bird_table_3[tail_num] then
+					return true
+				end
+			elseif pos == 1 or pos == -3 then --上家
+				if self.four_bird_table_4[tail_num] then
+					return true
+				end
+			else --庄家159
+				if self.four_bird_table_1[tail_num] then
+					return true
+				end
+			end
+		end
+	else
+		return false
+	end
+end
+
+
+function majiang_operation:handle_find_bird(banker, chair_id, leftcard)
 	local ret = {}
 	ret.bird_num = 0
 	ret.birds = {}
@@ -360,7 +419,7 @@ function majiang_operation:handle_find_bird(leftcard)
 		end
 		for i = 1, num do
 			table.insert(ret.birds, leftcard[1])
-			if self:check_is_bird(leftcard[1]) then
+			if self:check_is_bird_follow_banker(banker,chair_id,leftcard[1]) then
 				ret.bird_num = ret.bird_num + self.table_config.bird_point
 				table.insert(ret.zhong_bird, leftcard[1])
 			end
@@ -394,7 +453,7 @@ end
 
 --------------------------------------------------------------------
 
-function majiang_operation:set_config(game_config, table_config, louHuChair )
+function majiang_operation:set_config(game_config, table_config, louHuChair, player_count)
 	--[[
 		game_config = {}
 		game_config.curCard = nil
@@ -416,6 +475,7 @@ function majiang_operation:set_config(game_config, table_config, louHuChair )
 	]]
 	self.table_config = table_config
 	--table.printT(self.table_config)
+	self.player_count = player_count
 	local bird_point = self.table_config.bird_point or 1
 	self.table_config.bird_point = bird_point
 	self.table_config.find_bird = self.table_config.find_bird or 0
@@ -428,12 +488,59 @@ function majiang_operation:set_config(game_config, table_config, louHuChair )
 	if self.table_config.laizi or self.table_config.hongzhong then
 		self.LAIZI = 4
 	end
-	self.bird_table = {}
-	self.bird_table[1] = true
-	self.bird_table[5] = true
-	self.bird_table[9] = true
-
+	-- self.bird_table = {}
+	-- self.bird_table[1] = true
+	-- self.bird_table[5] = true
+	-- self.bird_table[9] = true
 	self.louHuChair = louHuChair
+
+	--4人牌局
+	self.four_bird_table_1 = {}
+	self.four_bird_table_1[1] = true
+	self.four_bird_table_1[5] = true
+	self.four_bird_table_1[9] = true
+
+	self.four_bird_table_2 = {}
+	self.four_bird_table_2[2] = true
+	self.four_bird_table_2[6] = true
+
+	self.four_bird_table_3 = {}
+	self.four_bird_table_3[3] = true
+	self.four_bird_table_3[7] = true
+
+	self.four_bird_table_4 = {}
+	self.four_bird_table_4[4] = true
+	self.four_bird_table_4[8] = true
+
+	--3人牌局
+	self.three_bird_table_1 = {}
+	self.three_bird_table_1[1] = true
+	self.three_bird_table_1[4] = true
+	self.three_bird_table_1[7] = true
+
+	self.three_bird_table_2 = {}
+	self.three_bird_table_2[2] = true
+	self.three_bird_table_2[5] = true
+	self.three_bird_table_2[8] = true
+
+	self.three_bird_table_3 = {}
+	self.three_bird_table_3[3] = true
+	self.three_bird_table_3[6] = true
+	self.three_bird_table_3[9] = true
+
+	--2人牌局
+	self.two_bird_table_1 = {}
+	self.two_bird_table_1[1] = true
+	self.two_bird_table_1[3] = true
+	self.two_bird_table_1[5] = true
+	self.two_bird_table_1[7] = true
+	self.two_bird_table_1[9] = true
+
+	self.two_bird_table_2 = {}
+	self.two_bird_table_2[2] = true
+	self.two_bird_table_2[4] = true
+	self.two_bird_table_2[6] = true	
+	self.two_bird_table_2[8] = true		
 end
 
 return majiang_operation

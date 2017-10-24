@@ -222,13 +222,10 @@ function cardDef:init_cards(laiZi, player_count, baiban_laizi, no_feng)
     if no_feng == true then 
     	if laiZi and baiban_laizi then 
     		randcard = baiban_budaifeng
-    		syslog.debug("baiban_laizi===============")
     	else
     		randcard = budaifeng
-    		syslog.debug("laiZi===============")
     	end
     else
-    	syslog.debug("draw_card===============")
     	randcard = daifeng
     end
 
@@ -242,7 +239,6 @@ function cardDef:init_cards(laiZi, player_count, baiban_laizi, no_feng)
             table.insert(player_cards[i], table.remove(cards, math.random(#cards)))
         end
     end
-    syslog.debug("cards==============="..#cards)
     return player_cards, cards
 end
 

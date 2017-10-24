@@ -22,7 +22,7 @@ function game_sink:ctor(interface, table_config)
 	self.is_playing = false
 	self.players = {}
 	self:init_game()
-	majiang_opration:set_config(self.game_all_info, self.game_config, self.louHuChair )
+	majiang_opration:set_config(self.game_all_info, self.game_config, self.louHuChair, self.table_config.player_count)
 	self.game_record = game_record_ctor.new(self.table_config)
 end
 
@@ -982,7 +982,7 @@ function game_sink:hu_card(chair_id, card)
             local zhamaTab = {}
             if self.game_config.hongzhong then
                 if not next(self.game_end_balance_info.birdCard) then
-              		local ret = majiang_opration:handle_find_bird(self.aftercards)
+              		local ret = majiang_opration:handle_find_bird(self.banker,chair_id,self.aftercards)
 				    self.game_end_balance_info.birdCard = ret.birds
 				    self.game_end_balance_info.birdNum = ret.bird_num
 				    self.game_end_balance_info.zhongbird = ret.zhong_bird
@@ -1013,7 +1013,7 @@ function game_sink:hu_card(chair_id, card)
                 end
             else
 			    if not next(self.game_end_balance_info.birdCard) then
-				    local ret = majiang_opration:handle_find_bird(self.aftercards)
+				    local ret = majiang_opration:handle_find_bird(self.banker,chair_id,self.aftercards)
 				    self.game_end_balance_info.birdCard = ret.birds
 				    self.game_end_balance_info.birdNum = ret.bird_num
 				    self.game_end_balance_info.zhongbird = ret.zhong_bird
