@@ -301,7 +301,7 @@ function command.QUERY_ROOM(args, status, body)
 						for i = 1, #room.antiCheat ,2 do
 							local distance = distance_earth(tonumber(room.antiCheat[i]), tonumber(room.antiCheat[i+1]), tonumber(args.antiCheatLat), tonumber(args.antiCheatLon))
 							syslog.debugf("antiCheat gps %f, %f, %f, %f, %f",room.antiCheat[i], room.antiCheat[i+1], args.antiCheatLat, args.antiCheatLon,	distance)
-							if distance <= 800  then
+							if distance <= 600  then
 								syslog.debugf("too closed return errCode=-101")
 								return {status = 1,errCode = -101,error = "too closed" }
 							end

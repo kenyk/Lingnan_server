@@ -455,7 +455,7 @@ function hupai:check_can_hu(pai, MAXHUNNUM, seven_hu,laizi_card)
 	end
 
 	if curHunNum >= 4 then
-		syslog.info("testHu:4红中直接胡牌")
+		syslog.info("testHu:4鬼直接胡牌")
 		return true,1
 	end
 

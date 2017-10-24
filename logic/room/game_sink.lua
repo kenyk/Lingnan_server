@@ -864,16 +864,22 @@ end
 function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op)
 	local win_point = 0
 	local birdPoint = 0
+	local chi_hu_base_point = 1
+	local zimo_hu_base_point = 2
+
+	if self.banker == win_chair then
+		if self.table_config.game_index == 1 then
+			--房主开放，连庄，多赢一分
+			chi_hu_base_point = chi_hu_base_point + 1
+			zimo_hu_base_point = zimo_hu_base_point + 1
+		end
+	end
+
 	--自摸
 	if lose_chair == 0 then
 		for k, v in pairs(self.players) do
 			if k ~= win_chair then
-				-- if (win_chair == self.banker or k == self.banker) and self.game_config.idle then
-				-- 	v.balance_info.huPoint = - (2 + 1)
-				-- else
-				-- 	v.balance_info.huPoint = - 2
-				-- end
-				v.balance_info.huPoint = - 2
+				v.balance_info.huPoint = - zimo_hu_base_point
 				v.balance_info.birdPoint = -pbirdPoint
 				birdPoint = birdPoint + pbirdPoint
 				win_point = win_point + (-v.balance_info.huPoint)
@@ -883,15 +889,8 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op)
 		--接炮
 		if op == 2 then
 			local lose_point = 0
-			-- if (self.banker == win_chair or self.banker == lose_chair) and self.game_config.idle then
-			-- 	lose_point = -2
-			-- 	win_point = 2
-			-- else
-			-- 	lose_point = -1
-			-- 	win_point = 1
-			-- end
-			lose_point = -1
-			win_point = 1
+			lose_point = -chi_hu_base_point
+			win_point = chi_hu_base_point
 			local game_balance_info = self.players[lose_chair].balance_info
 			game_balance_info.huPoint = game_balance_info.huPoint + lose_point
 			game_balance_info.birdPoint = -pbirdPoint + game_balance_info.birdPoint 
@@ -902,12 +901,7 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op)
 			for k, v in pairs(self.players) do
 				local lose_point = 0
 				if k ~= win_chair then
-					-- if (win_chair == self.banker or k == self.banker) and self.game_config.idle then
-					-- 	win_point = win_point - 3
-					-- else
-					-- 	win_point = win_point - 2
-					-- end
-					win_point = win_point - 2
+					win_point = win_point - zimo_hu_base_point
 					birdPoint = birdPoint + pbirdPoint
 				end
 			end
@@ -922,7 +916,6 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op)
 	win_balance_info.huPoint = win_point + win_balance_info.huPoint
 	win_balance_info.birdPoint = birdPoint + win_balance_info.birdPoint
 	win_balance_info.huType = op
-	--win_balance_info.fanType = fan_type
 end
 
 local function checkHashongzhong(cards)

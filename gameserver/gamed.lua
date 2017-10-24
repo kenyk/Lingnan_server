@@ -61,7 +61,7 @@ function gamed.command_handler (cmd, ...)
 	local f = assert (CMD[cmd])
 	return f (...)
 end
---µÚÈı·½ÇşµÀÈÏÖ¤
+--ç¬¬ä¸‰æ–¹æ¸ é“è®¤è¯
 function gamed.auth_handler (session, token)
 	--return skynet.call (logind, "lua", "verify", session, token)	
 	return session
