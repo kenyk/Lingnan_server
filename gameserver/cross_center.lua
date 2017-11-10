@@ -95,9 +95,9 @@ function command.CREATE_ROOM_ANYWHERE(args, status, body)
 		antiCheatRoom = true
 	end 
 
-
+	--table.printT(body)
 	if status == 200 then
-		table.printR(body)
+		--table.printR(body)
 		if body.errCode == 0 and body.data.orderCode then	
 			if 	body.data.isNew == "1"  then
 	 			local best_id = find_best_room_server()
@@ -120,10 +120,15 @@ function command.CREATE_ROOM_ANYWHERE(args, status, body)
 																									  	gameId = assert(tonumber(args.gameId))})
 					--table.printR(re)
 					if re and re.code == 0 then
+						local antiCheat = {}
+						local antiCheatInfo = {}
+						antiCheatInfo.antiCheatLat = antiCheatLat
+						antiCheatInfo.antiCheatLon = antiCheatLon
+						antiCheat[uid] = antiCheatInfo
 						room_servers_map[best_id].num_entities = room_servers_map[best_id].num_entities + 1
 						datacenter.set("room_manager"  , re.enter_code, {
 																			address = re.address, num = 0, service_id = best_id ,private_code = re.private_code, clubId = clubId, orderCode = body.data.orderCode,
-																			antiCheat = { antiCheatLat, antiCheatLon }, uid = uid, ip = {body.data.ip},
+																			antiCheat = antiCheat, uid = uid, ip = {body.data.ip},
 																			antiCheatRoom = antiCheatRoom
 																		}
 									  )
@@ -162,10 +167,15 @@ function command.CREATE_ROOM_ANYWHERE(args, status, body)
 																										gameId = assert(tonumber(args.gameId))})
 						--table.printR(re)
 					if re and re.code == 0 then
+						local antiCheat = {}
+						local antiCheatInfo = {}
+						antiCheatInfo.antiCheatLat = antiCheatLat
+						antiCheatInfo.antiCheatLon = antiCheatLon
+						antiCheat[uid] = antiCheatInfo
 						room_servers_map[best_id].num_entities = room_servers_map[best_id].num_entities + 1
 						datacenter.set("room_manager"  , re.enter_code, {
 																			address = re.address, num = 0, service_id = best_id ,private_code = re.private_code, clubId = clubId, orderCode = body.data.orderCode,
-																			antiCheat = {antiCheatLat, antiCheatLon }, uid = uid, ip = {body.data.ip},
+																			antiCheat = antiCheat, uid = uid, ip = {body.data.ip},
 																			antiCheatRoom = antiCheatRoom 
 																		}
 									  )
@@ -193,7 +203,7 @@ function command.CREATE_ROOM_ANYWHERE_BATCH(args, status, body)
 	end 
 ]]
 	if status == 200 then
-		table.printR(body)
+		--table.printR(body)
 		if body.errCode == 0 and body.data.orderCodes then	
 			local total = #body.data.orderCodes
 			if total > 30 then
@@ -277,18 +287,13 @@ function command.QUERY_ROOM(args, status, body)
 	end
 	local address = assert(room.address)
 	local choose = assert(room.service_id)
-
-
-
-
+	table.printT(room)
 	if status == 200 then
-		table.printR(body)	
 		if body.errCode == 0 then
 			local para = {}
 			para.uid = assert(tonumber( body.data.userId))
 			para.nickname = body.data.nickName or "test"..args.uid
-			para.ip = body.data.ip or "127.0.0.1"
-	
+			para.ip = body.data.ip or "127.0.0.1"	
 			para.image_url = body.data.avatar
 			para.gender = tonumber(body.data.gender)
 
@@ -298,24 +303,31 @@ function command.QUERY_ROOM(args, status, body)
 					return {status = 1,errCode = -100,error = "gps" }
 				else
 					if para.uid ~= room.uid then
-						for i = 1, #room.antiCheat ,2 do
-							local distance = distance_earth(tonumber(room.antiCheat[i]), tonumber(room.antiCheat[i+1]), tonumber(args.antiCheatLat), tonumber(args.antiCheatLon))
-							syslog.debugf("antiCheat gps %f, %f, %f, %f, %f",room.antiCheat[i], room.antiCheat[i+1], args.antiCheatLat, args.antiCheatLon,	distance)
-							if distance <= 600  then
-								syslog.debugf("too closed return errCode=-101")
-								return {status = 1,errCode = -101,error = "too closed" }
-							end
+						for k,v in pairs(room.antiCheat) do
+							if k ~= para.uid then
+								local distance = distance_earth(tonumber(v.antiCheatLat), tonumber(v.antiCheatLon), tonumber(args.antiCheatLat), tonumber(args.antiCheatLon))
+								syslog.debugf("antiCheat gps %f, %f, %f, %f, %f",v.antiCheatLat, v.antiCheatLon, args.antiCheatLat, args.antiCheatLon,	distance)
+								if distance <= 600  then
+							 		syslog.debugf("too closed return errCode=-101")
+							 		return {status = 1,errCode = -101,error = "too closed" }
+							 	end
+						 	end
 						end
-						for i = 1, #room.ip  do
-							syslog.debugf(" ip compare  %s == %s",para.ip, room.ip[i])
-							if room.ip[i] == para.ip  then
+
+						for k,v in pairs(room.ip) do
+							if v == para.ip then
 								syslog.debugf("ip  closed return errCode=-101")
 								return {status = 1,errCode = -101,error = "ip  closed" }
 							end
-						end						
-						room.antiCheat[#room.antiCheat + 1] = args.antiCheatLat
-						room.antiCheat[#room.antiCheat + 1] = args.antiCheatLon
-						room.ip[#room.ip + 1] = para.ip
+						end		
+						local antiCheatInfo = {}
+						antiCheatInfo.antiCheatLat = args.antiCheatLat
+						antiCheatInfo.antiCheatLon = args.antiCheatLon
+						room.antiCheat[para.uid] = antiCheatInfo	
+						room.ip[para.uid] = para.ip
+						datacenter.set("room_manager", enter_code, room)
+					else
+						room.ip[para.uid] = para.ip	
 						datacenter.set("room_manager", enter_code, room)
 					end
 				end
@@ -341,6 +353,16 @@ function command.UPDATE_ORDER_STATUS(order_id, stat, enter_code)
 		return
 	end	
 	skynet.send("WEBSERVER_MGR", "lua","update_order_status", order_id, stat, enter_code, room.clubId)
+end
+
+function command.UPDATE_ROOM_INFO(enter_code, uid)
+	local room = datacenter.get("room_manager", enter_code)
+	if not room then
+		return
+	end
+	room.ip[uid] = nil
+	room.antiCheat[uid] = nil
+	datacenter.set("room_manager",  enter_code, room)
 end
 
 function command.UPDATE_ROOM_SERVERS(harbor_id, enter_code, sclub, point_wms)

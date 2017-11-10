@@ -281,6 +281,13 @@ function command.GET_ROOM_INFO_BY_ROOM_NAME(enter_code, private_code)
     return nil
 end
 
+function command.UPDATE_ROOM_INFO(enter_code, uid)
+    if not room_code_table[enter_code] then
+        return
+    end
+    skynet.call("CENTER_MGR", "lua","UPDATE_ROOM_INFO", enter_code, uid)
+end
+
 local function init()
 	local n = game_config.room_pool or 1 
 	for i = 1, n do
@@ -298,8 +305,6 @@ end
 function command.UPDATE_PLAYER_STATUS(role_id , value)
     skynet.fork(update_datacenter, role_id, value)
 end
-
-
 
 function command.UPDATE_ORDER_STATUS(enter_code, status)
 	if not room_code_table[enter_code]  then

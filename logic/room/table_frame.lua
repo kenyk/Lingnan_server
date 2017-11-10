@@ -110,6 +110,8 @@ function table_frame:exit_table(uid)
     self.lookon_players[uid] = nil
     self.lookon_players_num = self.lookon_players_num - 1
     self:send_table_scene()
+    skynet.send(".BUILD_ROOMS_SERVICE", "lua", "update_room_info", self.enter_code, uid)
+    
     return true, {code = 0}
 end
 
