@@ -24,6 +24,8 @@ local tuidaohu_game_creator = require "tuidaohu.game_sink"
 local tuidaohu_table_creator = require "tuidaohu.table_frame"
 local zhaoqing_game_creator = require "zhaoqing.game_sink"
 local zhaoqing_table_creator = require "zhaoqing.table_frame"
+local yunfu_game_creator = require "yunfu.game_sink"
+local yunfu_table_creator = require "yunfu.table_frame"
 
 local table_sink = {}
 local room_player = {}
@@ -344,7 +346,7 @@ function command.INIT(args)
 	syslog.debugf ("command.INIT game_id, enter_code :%d ,%d ",args.game_id, tonumber(enter_code))
 	math.randomseed(tonumber(enter_code))
     --2长沙 1转转 7郴州 8红中（用转转的game_sink） 10宁乡麻将 28常德麻将
-    --100推倒胡 101广东鸡胡 102肇庆麻将
+    --100岭南麻将 101云浮麻将 102肇庆麻将
 	if args.game_id == 2 then
 		table_sink = changsha_table_creator.new(args)
 		table_interface = table_sink:get_interface()
@@ -369,6 +371,12 @@ function command.INIT(args)
   		table_sink = tuidaohu_table_creator.new(args)
 		table_interface = table_sink:get_interface()
 		game_sink = tuidaohu_game_creator.new(table_interface)
+		table_sink:set_game_sink(game_sink)  
+	elseif args.game_id == 101 then
+		-- print("=========args.game_id==============="..args.game_id)
+  		table_sink = yunfu_table_creator.new(args)
+		table_interface = table_sink:get_interface()
+		game_sink = yunfu_game_creator.new(table_interface)
 		table_sink:set_game_sink(game_sink)  
     elseif args.game_id == 102 then
   		table_sink = zhaoqing_table_creator.new(args)

@@ -866,13 +866,13 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 
 	if self.game_config.again_banker == true then
 		if self.banker == win_chair then
-			if self.table_config.game_index ~= 1 then
-				syslog.debug("玩家胡牌、连庄+2分")
-				--庄家每多连庄1次，胡牌时分数+2分
-				chi_hu_base_point = chi_hu_base_point + 2
-				zimo_hu_base_point = zimo_hu_base_point + 2
-				againBanker = 1
-			end
+			--if self.table_config.game_index ~= 1 then
+			syslog.debug("玩家胡牌、连庄+2分")
+			--庄家每多连庄1次，胡牌时分数+2分
+			chi_hu_base_point = chi_hu_base_point + 2
+			zimo_hu_base_point = zimo_hu_base_point + 2
+			againBanker = 1
+			--end
 		end
 	end
 	--自摸

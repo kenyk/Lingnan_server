@@ -2,9 +2,9 @@ require "functions"
 require "table_util"
 local json = require "cjson"
 -- local Scheduler = require "scheduler"
-local majiang = require "majiang.tuidaohu.cardDef"
-local majiang_opration = require "majiang.tuidaohu.majiang_opration"
-local game_player_info = require "majiang.tuidaohu.game_player_info"
+local majiang = require "majiang.yunfu.cardDef"
+local majiang_opration = require "majiang.yunfu.majiang_opration"
+local game_player_info = require "majiang.yunfu.game_player_info"
 local game_record_ctor = require "game_record"
 local syslog = require "syslog"
 -- game demo 
@@ -24,7 +24,7 @@ end
 
 --两人玩法不能抓马 没有癞子
 function game_sink:init_game_config()
-	if self.table_config.player_count == 2 and self.game_config.type ~= 2 then
+	if self.table_config.player_count == 2 and self.game_config.type ~= 5 then
 		self.game_config.find_bird = 0
 		self.game_config.laizi = false
 	end
@@ -434,7 +434,7 @@ end
 --发牌
 function game_sink:deal_cards()
 	local player_cards = {}
-    player_cards, self.aftercards = majiang:init_cards(self.game_config.laizi, self.table_config.player_count, self.game_config.baiban,self.game_config.no_feng)
+    player_cards, self.aftercards = majiang:init_cards(self.game_config.laizi, self.table_config.player_count, self.game_config.baiban,self.game_config.no_feng,self.game_config.no_wan,self.game_config.all_card)
 	self.game_record:record_init_card(self.aftercards)
 
 	local card_num = {}
@@ -829,21 +829,23 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 	local win_point = 0
 	local birdPoint = 0
 	local noLaiziDouble = 0
+	local sevenDouble = 0
 	local againBanker = 0
 	local chi_hu_base_point = 0
 	local zimo_hu_base_point = 0
 	if fan_type == 2 then --7对的分数需要改变，则改这里
 		chi_hu_base_point = 1
 		zimo_hu_base_point = 2
-		if self.game_config.seven_hu == true then --可胡7小对
-			chi_hu_base_point = chi_hu_base_point 
-			zimo_hu_base_point = zimo_hu_base_point 
+		if self.game_config.seven_hu == true and self.game_config.seven_hu_4_point == true then --可胡7小对
+			chi_hu_base_point = chi_hu_base_point * 2
+			zimo_hu_base_point = zimo_hu_base_point * 2
+			sevenDouble = 1
+			syslog.debug("七对胡牌，底分翻倍")
 		end
 	elseif fan_type <= 1 then --平胡基本分
 		chi_hu_base_point = 1
 		zimo_hu_base_point = 2 
 	end
-
 	if self.game_config.laizi == true and self.game_config.no_laizi_hu_4_point == true then --无鬼胡牌翻倍
 		local game_card_info = self.players[win_chair].card_info
 		local handCards = table.clone(game_card_info.handCards)
@@ -855,7 +857,7 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 			end
 		end
 		if is_double == true then
-			syslog.debug("无鬼胡牌，加倍")
+			syslog.debug("无鬼胡牌，底分翻倍")
 			chi_hu_base_point = chi_hu_base_point * 2
 			zimo_hu_base_point = zimo_hu_base_point * 2
 			noLaiziDouble = 1
@@ -864,16 +866,15 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 
 	if self.game_config.again_banker == true then
 		if self.banker == win_chair then
-			-- if self.table_config.game_index ~= 1 then
-			syslog.debug("玩家胡牌、节节高+2分")
+			--if self.table_config.game_index ~= 1 then
+			syslog.debug("玩家胡牌、连庄+2分")
 			--庄家每多连庄1次，胡牌时分数+2分
 			chi_hu_base_point = chi_hu_base_point + 2
 			zimo_hu_base_point = zimo_hu_base_point + 2
 			againBanker = 1
-			-- end
+			--end
 		end
 	end
-
 	--自摸
 	if lose_chair == 0 then
 		for k, v in pairs(self.players) do
@@ -897,7 +898,7 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 			birdPoint = birdPoint + pbirdPoint
 		--抢杠
 		elseif op == 3 then
-			if self.game_config.qiang_gang_quanbao == true then
+			if self.game_config.qiang_gang_quanbao == true then --抢杠全包
 				for k, v in pairs(self.players) do
 					local lose_point = 0
 					if k ~= win_chair then
@@ -910,7 +911,6 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 				game_balance_info.birdPoint = -birdPoint 
 				game_balance_info.huType = 5
 				win_point = -win_point
-				syslog.debug("抢杠胡，抢杠全包")
 			else --不勾中抢包全包
 				for k, v in pairs(self.players) do
 					local lose_point = 0
@@ -921,7 +921,6 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 						win_point = win_point + (-v.balance_info.huPoint)
 					end
 				end
-				syslog.debug("抢杠胡，抢杠不全包")
 			end
 		end 
 	end
@@ -930,6 +929,7 @@ function game_sink:deal_hu_balance(win_chair, lose_chair, pbirdPoint, op, fan_ty
 	win_balance_info.birdPoint =  birdPoint
 	win_balance_info.huType = op
 	win_balance_info.fanType = fan_type
+	win_balance_info.sevenDouble = sevenDouble
 	win_balance_info.noLaiziDouble = noLaiziDouble
 	win_balance_info.againBanker = againBanker
 end
@@ -1090,7 +1090,7 @@ end
 
 --确认癞子，翻出牌后，翻牌+1为癞子，勾选双鬼:+1、+2为癞子
 function game_sink:fangui_handler()
-    local card = majiang:getFanPaiLaizi(self.game_config.no_feng)
+    local card = majiang:getFanPaiLaizi(self.game_config.no_feng, self.game_config.no_wan)
 	local card1
 	if card == 47 then
 		card1 = 41
